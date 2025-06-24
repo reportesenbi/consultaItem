@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Ubicaciones</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <style>
+    /* Estilos base mejorados */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      padding-bottom: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin-top: 20px;
+    }
+    .card {
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      border: none;
+    }
+    .card-header {
+      background-color: #0d6efd;
+      color: white;
+      border-radius: 10px 10px 0 0 !important;
+      padding: 15px 20px;
+      font-weight: 600;
+    }
+    .btn-primary {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+    }
+    .table-responsive {
+      margin-top: 20px;
+    }
+    .search-section, .form-section {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .tab-content {
+      padding: 20px 0;
+    }
+    .nav-tabs .nav-link.active {
+      font-weight: bold;
+      color: #0d6efd;
+      border-bottom: 3px solid #0d6efd;
+    }
+    .nav-tabs .nav-link {
+      color: #495057;
+    }
+    
+    /* Estilos para autocompletado mejorado */
+    .autocomplete-container {
+      position: relative;
+      width: 100%;
+    }
+    .autocomplete-items {
+      position: absolute;
+      border: 1px solid #d4d4d4;
+      border-top: none;
+      z-index: 99;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      background-color: white;
+    }
+    .autocomplete-items div {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    .autocomplete-items div:hover {
+      background-color: #e9e9e9;
+    }
+    .autocomplete-active {
+      background-color: #0d6efd !important;
+      color: white;
+    }
+    
+    /* Estilos para móviles */
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 10px;
+      }
+      .card-header h2 {
+        font-size: 1.5rem;
+      }
+      .form-section, .search-section {
+        padding: 15px;
+      }
+    }
+    
+    /* Estilos para resultados */
+    .result-item {
+      background-color: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .result-header {
+      font-weight: bold;
+      color: #0d6efd;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .result-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .detail-item {
+      margin-bottom: 5px;
+    }
+    .detail-label {
+      font-weight: 600;
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="card-header text-center">
+        <h2><i class="fas fa-map-marker-alt me-2"></i>Sistema de Gestión de Ubicaciones</h2>
+      </div>
+      <div class="card-body">
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab" aria-controls="search" aria-selected="true">
+              <i class="fas fa-search me-2"></i>Consultar
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button" role="tab" aria-controls="register" aria-selected="false">
+              <i class="fas fa-plus-circle me-2"></i>Registrar
+            </button>
+          </li>
+        </ul>
+        
+        <div class="tab-content" id="myTabContent">
+          <!-- Pestaña de Consulta -->
+          <div class="tab-pane fade show active" id="search" role="tabpanel" aria-labelledby="search-tab">
+            <div class="search-section">
+              <h4><i class="fas fa-search me-2"></i>Consultar Ubicación</h4>
+              <div class="row mt-3">
+                <div class="col-md-8">
+                  <div class="autocomplete-container">
+                    <input type="text" id="referenciaInput" class="form-control" placeholder="Ingrese referencia..." autocomplete="off">
+                    <div id="autocompleteList" class="autocomplete-items" style="display:none;"></div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <button id="btnBuscar" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-2"></i>Buscar
+                  </button>
+                </div>
+              </div>
+              
+              <div id="resultados" class="mt-4" style="display:none;">
+                <h5>Resultados de la búsqueda</h5>
+                <div id="resultadosContainer"></div>
+              </div>
+              
+              <div id="sinResultados" class="alert alert-warning mt-3" style="display:none;">
+                <i class="fas fa-exclamation-triangle me-2"></i>No se encontraron resultados para la referencia ingresada.
+              </div>
+            </div>
+          </div>
+          
+          <!-- Pestaña de Registro -->
+          <div class="tab-pane fade" id="register" role="tabpanel" aria-labelledby="register-tab">
+            <div class="form-section">
+              <h4><i class="fas fa-plus-circle me-2"></i>Registrar Nueva Ubicación</h4>
+              <form id="registroForm" class="mt-3">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="referencia" class="form-label">Referencia*</label>
+                    <div class="autocomplete-container">
+                      <input type="text" id="referencia" class="form-control" placeholder="Seleccione referencia..." required>
+                      <div id="autocompleteListRegistro" class="autocomplete-items" style="display:none;"></div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="cantidad" class="form-label">Cantidad*</label>
+                    <input type="number" class="form-control" id="cantidad" required>
+                  </div>
+                </div>
+                
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label for="carril" class="form-label">Carril*</label>
+                    <select class="form-select" id="carril" required>
+                      <option value="">Seleccione...</option>
+                      <!-- Opciones se llenarán con JavaScript -->
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label for="ubicacion" class="form-label">Ubicación*</label>
+                    <select class="form-select" id="ubicacion" required>
+                      <option value="">Seleccione...</option>
+                      <!-- Opciones se llenarán con JavaScript -->
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label for="op" class="form-label">OP*</label>
+                    <input type="text" class="form-control" id="op" required>
+                  </div>
+                </div>
+                
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="efectuadoPor" class="form-label">Efectuado por*</label>
+                    <select class="form-select" id="efectuadoPor" required>
+                      <option value="">Seleccione...</option>
+                      <!-- Opciones se llenarán con JavaScript -->
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="observaciones" class="form-label">Observaciones</label>
+                    <input type="text" class="form-control" id="observaciones">
+                  </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Guardar Registro
+                  </button>
+                </div>
+              </form>
+              
+              <div id="registroExitoso" class="alert alert-success mt-3" style="display:none;">
+                <i class="fas fa-check-circle me-2"></i>Registro guardado correctamente.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Variables globales para almacenar datos
+    let referenciasDisponibles = [];
+    let personalDisponible = [];
+    
+    // Función para inicializar la aplicación
+    function initApp() {
+      // Cargar datos iniciales
+      cargarDatosIniciales();
+      
+      // Configurar eventos
+      configurarEventos();
+    }
+    
+    // Cargar datos necesarios para la aplicación
+    function cargarDatosIniciales() {
+      google.script.run.withSuccessHandler(function(datos) {
+        // Almacenar referencias para autocompletado
+        referenciasDisponibles = datos.referencias;
+        
+        // Configurar autocompletado para búsqueda
+        configurarAutocompletado('referenciaInput', 'autocompleteList', referenciasDisponibles, true);
+        
+        // Configurar autocompletado para registro
+        configurarAutocompletado('referencia', 'autocompleteListRegistro', referenciasDisponibles, false);
+        
+        // Llenar select de carriles (1-20)
+        const carrilSelect = document.getElementById('carril');
+        for (let i = 1; i <= 20; i++) {
+          const option = document.createElement('option');
+          option.value = i;
+          option.textContent = i;
+          carrilSelect.appendChild(option);
+        }
+        
+        // Llenar select de ubicaciones (A1-D40)
+        const ubicacionSelect = document.getElementById('ubicacion');
+        const letras = ['A', 'B', 'C', 'D'];
+        letras.forEach(letra => {
+          for (let i = 1; i <= 40; i++) {
+            const option = document.createElement('option');
+            option.value = `${letra}${i}`;
+            option.textContent = `${letra}${i}`;
+            ubicacionSelect.appendChild(option);
+          }
+        });
+        
+        // Almacenar personal y llenar select
+        personalDisponible = datos.personal;
+        const personalSelect = document.getElementById('efectuadoPor');
+        personalDisponible.forEach(persona => {
+          const option = document.createElement('option');
+          option.value = persona;
+          option.textContent = persona;
+          personalSelect.appendChild(option);
+        });
+        
+      }).getDatosIniciales();
+    }
+    
+    // Configurar eventos de la aplicación
+    function configurarEventos() {
+      // Evento para búsqueda al hacer clic
+      document.getElementById("btnBuscar").addEventListener("click", buscarUbicaciones);
+      
+      // Evento para búsqueda con Enter
+      document.getElementById("referenciaInput").addEventListener("keyup", function(e) {
+        if (e.key === "Enter") {
+          buscarUbicaciones();
+        }
+      });
+      
+      // Evento para envío del formulario
+      document.getElementById("registroForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        registrarUbicacion();
+      });
+    }
+    
+    // Configurar autocompletado para un campo de entrada
+    function configurarAutocompletado(inputId, listId, items, buscarAutomatico) {
+      const input = document.getElementById(inputId);
+      const autocompleteList = document.getElementById(listId);
+      let currentFocus = -1;
+      
+      input.addEventListener("input", function() {
+        const val = this.value.trim();
+        autocompleteList.innerHTML = "";
+        autocompleteList.style.display = "none";
+        
+        if (!val) return;
+        
+        // Filtrar items que coincidan con la entrada
+        const resultados = items.filter(item => 
+          item.toString().toLowerCase().includes(val.toLowerCase())
+        ).slice(0, 10);
+        
+        if (resultados.length === 0) return;
+        
+        // Mostrar resultados
+        resultados.forEach(item => {
+          const div = document.createElement("div");
+          div.innerHTML = `<strong>${item.substr(0, val.length)}</strong>${item.substr(val.length)}`;
+          div.innerHTML += `<input type='hidden' value='${item}'>`;
+          div.addEventListener("click", function() {
+            input.value = this.getElementsByTagName("input")[0].value;
+            autocompleteList.innerHTML = "";
+            autocompleteList.style.display = "none";
+            if (buscarAutomatico && inputId === 'referenciaInput') {
+              buscarUbicaciones();
+            }
+          });
+          autocompleteList.appendChild(div);
+        });
+        
+        autocompleteList.style.display = "block";
+      });
+      
+      // Manejar navegación con teclado
+      input.addEventListener("keydown", function(e) {
+        const items = autocompleteList.getElementsByTagName("div");
+        
+        if (e.key === "ArrowDown") {
+          currentFocus++;
+          setActiveItem(items, currentFocus);
+        } else if (e.key === "ArrowUp") {
+          currentFocus--;
+          setActiveItem(items, currentFocus);
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          if (currentFocus > -1 && items.length > 0) {
+            items[currentFocus].click();
+          } else if (inputId === 'referenciaInput') {
+            buscarUbicaciones();
+          }
+        }
+      });
+      
+      // Cerrar autocompletado al hacer clic fuera
+      document.addEventListener("click", function(e) {
+        if (e.target !== input) {
+          autocompleteList.style.display = "none";
+        }
+      });
+    }
+    
+    // Establecer el ítem activo en el autocompletado
+    function setActiveItem(items, index) {
+      if (!items || items.length === 0) return false;
+      
+      // Ajustar índice si está fuera de rango
+      if (index >= items.length) index = 0;
+      if (index < 0) index = items.length - 1;
+      
+      // Remover clase activa de todos los ítems
+      for (let i = 0; i < items.length; i++) {
+        items[i].classList.remove("autocomplete-active");
+      }
+      
+      // Agregar clase activa al ítem seleccionado
+      items[index].classList.add("autocomplete-active");
+      return index;
+    }
+    
+    // Función para buscar ubicaciones
+    function buscarUbicaciones() {
+      const referencia = document.getElementById("referenciaInput").value.trim();
+      if (!referencia) {
+        alert("Por favor ingrese una referencia");
+        return;
+      }
+      
+      // Ocultar resultados anteriores
+      document.getElementById("resultados").style.display = "none";
+      document.getElementById("sinResultados").style.display = "none";
+      
+      // Mostrar carga (opcional)
+      // document.getElementById("loading").style.display = "block";
+      
+      // Realizar búsqueda
+      google.script.run.withSuccessHandler(function(resultados) {
+        const container = document.getElementById("resultadosContainer");
+        container.innerHTML = "";
+        
+        if (resultados.length > 0) {
+          // Mostrar cada resultado en una tarjeta
+          resultados.forEach((item, index) => {
+            const resultDiv = document.createElement("div");
+            resultDiv.className = "result-item";
+            
+            resultDiv.innerHTML = `
+              <div class="result-header">
+                <span>Registro ${index + 1}</span>
+                <small class="text-muted">${item.referencia}</small>
+              </div>
+              <div class="result-details">
+                <div class="detail-item">
+                  <span class="detail-label">Carril:</span>
+                  <span>${item.carril}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Ubicación:</span>
+                  <span>${item.ubicacion}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">OP:</span>
+                  <span>${item.op}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Cantidad:</span>
+                  <span>${item.cantidad}</span>
+                </div>
+                ${item.efectuadoPor ? `
+                <div class="detail-item">
+                  <span class="detail-label">Efectuado por:</span>
+                  <span>${item.efectuadoPor}</span>
+                </div>
+                ` : ''}
+                ${item.observaciones ? `
+                <div class="detail-item">
+                  <span class="detail-label">Observaciones:</span>
+                  <span>${item.observaciones}</span>
+                </div>
+                ` : ''}
+              </div>
+            `;
+            container.appendChild(resultDiv);
+          });
+          
+          document.getElementById("resultados").style.display = "block";
+        } else {
+          document.getElementById("sinResultados").style.display = "block";
+        }
+      }).withFailureHandler(function(error) {
+        console.error("Error en la búsqueda:", error);
+        alert("Error al buscar: " + error.message);
+      }).buscarReferencia(referencia);
+    }
+    
+    // Función para registrar nueva ubicación
+    function registrarUbicacion() {
+      const datos = {
+        referencia: document.getElementById("referencia").value,
+        cantidad: document.getElementById("cantidad").value,
+        carril: document.getElementById("carril").value,
+        ubicacion: document.getElementById("ubicacion").value,
+        op: document.getElementById("op").value,
+        efectuadoPor: document.getElementById("efectuadoPor").value,
+        observaciones: document.getElementById("observaciones").value
+      };
+      
+      // Validar campos requeridos
+      if (!datos.referencia || !datos.cantidad || !datos.carril || !datos.ubicacion || !datos.op || !datos.efectuadoPor) {
+        alert("Por favor complete todos los campos obligatorios");
+        return;
+      }
+      
+      // Enviar datos al servidor
+      google.script.run.withSuccessHandler(function() {
+        // Limpiar formulario
+        document.getElementById("registroForm").reset();
+        
+        // Mostrar mensaje de éxito
+        const successAlert = document.getElementById("registroExitoso");
+        successAlert.style.display = "block";
+        setTimeout(() => {
+          successAlert.style.display = "none";
+        }, 3000);
+        
+      }).withFailureHandler(function(error) {
+        alert("Error al guardar: " + error.message);
+      }).registrarUbicacion(datos);
+    }
+    
+    // Inicializar la aplicación cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
